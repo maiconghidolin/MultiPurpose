@@ -1,0 +1,28 @@
+Ferramentas/Tecnologias utilizadas:
+ - .NET 7
+ - JWT
+ - Docker / Docker Compose
+ - Postgres
+ - Swagger
+ - Postman
+ - AutoMapper
+ - MongoDB
+ 
+ - GitHub
+ 
+ - Design Patterns
+ 
+ 
+ - NUnit
+ - Logs
+ - Jenkings
+ 
+ - Hangfire
+ - RabitMQ
+ 
+ 
+ - Kubernetes
+ - Terraform
+ - Grafana
+ - Prometheus
+ 

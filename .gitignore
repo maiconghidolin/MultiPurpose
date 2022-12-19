@@ -1,0 +1,15 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/Publish/
+/.vs/
+obj
+bin
+appsettings.json
+/.idea/
+*.user
+
+MultiPurposeProject/bin
+MultiPurposeProject/obj
+

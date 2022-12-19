@@ -1,0 +1,37 @@
+version: '3.4'
+
+networks:
+  multipurposeproject-network:
+    driver: bridge
+
+services:
+  multipurposeproject:
+    image: ${DOCKER_REGISTRY-}multipurposeproject
+    build:
+      context: .
+      dockerfile: MultiPurposeProject/Dockerfile
+    environment:
+      DB_CONNECTION_STRING: "host=postgres;port=5432;database=multipurpose;username=postgres;password=postgres"
+    networks:
+      - multipurposeproject-network
+
+
+  postgres:
+    image: postgres:latest
+    ports:
+      - 5433:5432
+    expose:
+      - 5432
+    restart: always
+    volumes:
+      - db_volume:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "postgres"
+      POSTGRES_DB: "multipurpose"
+    networks:
+      - multipurposeproject-network
+
+
+volumes:
+  db_volume:
