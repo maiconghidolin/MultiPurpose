@@ -2,6 +2,7 @@
 
 using Microsoft.AspNetCore.Mvc;
 using MultiPurposeProject.Authorization;
+using MultiPurposeProject.Entities;
 using MultiPurposeProject.Models.Users;
 using MultiPurposeProject.Services;
 
@@ -12,7 +13,7 @@ public class UsersController : ControllerBase
 {
 
     private IUserService _userService;
-    
+
     public UsersController(
         IUserService userService)
     {
@@ -37,7 +38,7 @@ public class UsersController : ControllerBase
     [HttpPost("authenticate")]
     public IActionResult Authenticate(AuthenticateRequest model)
     {
-        var response = _userService.Authenticate(model);
+        AuthenticateResponse response = _userService.Authenticate(model);
         return Ok(response);
     }
 
@@ -45,8 +46,8 @@ public class UsersController : ControllerBase
     [HttpPost("register")]
     public IActionResult Register(RegisterRequest model)
     {
-        _userService.Register(model);
-        return Ok(new { message = "Registration sucessful" });
+        User user = _userService.Register(model);
+        return Ok(user);
     }
 
     [HttpGet]

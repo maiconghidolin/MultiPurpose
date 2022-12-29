@@ -7,6 +7,9 @@ networks:
 services:
   multipurposeproject:
     image: ${DOCKER_REGISTRY-}multipurposeproject
+    ports:
+      - 62660:80
+      - 62650:443 
     build:
       context: .
       dockerfile: MultiPurposeProject/Dockerfile

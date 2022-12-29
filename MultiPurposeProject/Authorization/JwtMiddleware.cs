@@ -1,5 +1,7 @@
 ﻿namespace MultiPurposeProject.Authorization;
 
+using Microsoft.AspNetCore.Mvc;
+using MultiPurposeProject.Helpers;
 using MultiPurposeProject.Services;
 
 public class JwtMiddleware
@@ -19,8 +21,14 @@ public class JwtMiddleware
 
         if (userId != null)
         {
-            // attach user to context on successful jwt validation
-            context.Items["User"] = userService.GetById(userId.Value);
+            try
+            {
+                // attach user to context on successful jwt validation
+                context.Items["User"] = userService.GetById(userId.Value);
+            }catch(Exception)
+            {
+                context.Items["User"] = null;
+            }
         }
 
         await _next(context);

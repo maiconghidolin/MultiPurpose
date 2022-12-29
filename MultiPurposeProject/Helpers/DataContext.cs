@@ -19,9 +19,6 @@ public class DataContext : DbContext
 
         options.UseNpgsql(connectionString);
 
-        //options.UseNpgsql(
-        //    Configuration.GetConnectionString("WebApiDatabase"),
-        //    options => options.SetPostgresVersion(new Version(9, 6)));
     }
 
     public DbSet<User> Users { get; set; }
