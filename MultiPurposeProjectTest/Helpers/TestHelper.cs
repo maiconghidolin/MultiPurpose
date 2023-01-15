@@ -6,7 +6,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace MultiPurposeProjectTest.Helpers;
+namespace MultiPurposeProjectUnitTest.Helpers;
 
 public static class TestHelper
 {

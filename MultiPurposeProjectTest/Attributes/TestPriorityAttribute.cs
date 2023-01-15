@@ -1,10 +1,12 @@
-﻿[AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
-public class TestPriorityAttribute : Attribute
-{
-    public TestPriorityAttribute(int priority)
-    {
-        Priority = priority;
-    }
+﻿using System;
 
-    public int Priority { get; private set; }
+namespace MultiPurposeProjectUnitTest.Attributes
+{
+    [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
+    public class TestPriorityAttribute : Attribute
+    {
+        public int Priority { get; private set; }
+
+        public TestPriorityAttribute(int priority) => Priority = priority;
+    }
 }

@@ -1,360 +1,252 @@
+using Microsoft.AspNetCore.Mvc;
+using MultiPurposeProject.Controllers;
 using MultiPurposeProject.Entities;
 using MultiPurposeProject.Models.Users;
-using MultiPurposeProjectTest.Helpers;
-using System.Diagnostics;
-using System.Net.Http.Headers;
-using System.Text.Json;
-using Xunit;
+using MultiPurposeProjectUnitTest.Services;
+using MultiPurposeProjectUnitTest.Attributes;
 
-namespace MultiPurposeProjectTest;
+[assembly: CollectionBehavior(DisableTestParallelization = true)]
 
-[TestCaseOrderer("MultiPurposeProjectTest.TestCaseOrdering.PriorityOrderer", "MultiPurposeProjectTest")]
-public class UsersControllerTest : IDisposable
+namespace MultiPurposeProjectUnitTest
 {
 
-    public static readonly JsonSerializerOptions _jsonSerializerOptions = new() { PropertyNameCaseInsensitive = true };
-    private readonly HttpClient _httpClient = new()
+    [TestCaseOrderer("MultiPurposeProjectUnitTest.PriorityOrderer", "MultiPurposeProjectUnitTest")]
+    public class UsersControllerTest
     {
-        BaseAddress = new Uri("https://localhost:62650")
-    };
-    private static int _userId;
-    private static string _userToken = "";
 
-    [Fact, TestPriority(1)]
-    public async Task WhenCallingRegister_ThenReturnsOK()
-    {
-        // Arrange.
-        var expectedStatusCode = System.Net.HttpStatusCode.OK;
-        var stopwatch = Stopwatch.StartNew();
+        private static UsersController _usersController;
 
-        var expectedContent = new User()
+        public UsersControllerTest()
         {
-            Name = "Test User",
-            Username = "testuser"
-        };
+            var userService = new UserServiceFake();
+            _usersController = new UsersController(userService);
+        }
 
-        var content = new RegisterRequest() { 
-            Name= "Test User",
-            Username= "testuser",
-            Password= "testuser123"
-        };
-
-        // Act.
-        var response = await _httpClient.PostAsync("/Users/register", TestHelper.GetJsonStringContent(content));
-
-        // Assert.
-        var responseStream = await response.Content.ReadAsStreamAsync();
-        var responseContent = await JsonSerializer.DeserializeAsync<User>(responseStream, _jsonSerializerOptions);
-
-        TestHelper.AssertCommonResponseParts(stopwatch, response, expectedStatusCode);
-
-        Assert.Equal(expectedContent.Name, responseContent.Name);
-        Assert.Equal(expectedContent.Username, responseContent.Username);
-
-        _userId = responseContent.Id;
-    }
-
-    [Fact, TestPriority(2)]
-    public async Task WhenCallingRegister_ThenReturnsBadRequest()
-    {
-        // Arrange.
-        var expectedStatusCode = System.Net.HttpStatusCode.BadRequest;
-        var expectedContent = new { message = "Username 'testuser' is already taken" };
-        var stopwatch = Stopwatch.StartNew();
-
-        var content = new RegisterRequest()
+        [Fact, TestPriority(1)]
+        public void WhenCallingRegister_ThenReturnsOK()
         {
-            Name = "Test User",
-            Username = "testuser",
-            Password = "testuser123"
-        };
+            // Arrange.
+            var registerRequest = new RegisterRequest()
+            {
+                Name = "Other User",
+                Username = "otherUser",
+                Password = "otherUser123"
+            };
 
-        // Act.
-        var response = await _httpClient.PostAsync("/Users/register", TestHelper.GetJsonStringContent(content));
+            // Act.
+            var result = _usersController.Register(registerRequest);
 
-        // Assert.
-        await TestHelper.AssertResponseWithContentAsync(stopwatch, response, expectedStatusCode, expectedContent);
-    }
-  
-    [Fact, TestPriority(3)]
-    public async Task WhenCallingAuthenticate_ThenReturnsBadRequest()
-    {
-        // Arrange.
-        var expectedStatusCode = System.Net.HttpStatusCode.BadRequest;
-        var stopwatch = Stopwatch.StartNew();
+            // Assert.
+            var okResult = Assert.IsType<OkObjectResult>(result as OkObjectResult);
+            var user = okResult.Value as User;
 
-        var expectedContent = new { message = "Username or password is incorrect" };
+            Assert.Equal("Other User", user.Name);
+            Assert.Equal("otherUser", user.Username);
+        }
 
-        var content = new AuthenticateRequest()
+        [Fact, TestPriority(2)]
+        public void WhenCallingRegister_ThenReturnsBadRequest()
         {
-            Username = "testures",
-            Password = "testures123"
-        };
+            // Arrange.
+            object? expectedContent = new { message = "Username 'testUser' is already taken" };
 
-        // Act.
-        var response = await _httpClient.PostAsync("/Users/authenticate", TestHelper.GetJsonStringContent(content));
+            var registerRequest = new RegisterRequest()
+            {
+                Name = "Test User",
+                Username = "testUser",
+                Password = "testUser123"
+            };
 
-        // Assert.
-        await TestHelper.AssertResponseWithContentAsync(stopwatch, response, expectedStatusCode, expectedContent);
-    }
+            // Act.
+            var result = _usersController.Register(registerRequest);
 
-    [Fact, TestPriority(4)]
-    public async Task WhenCallingAuthenticate_ThenReturnsOK()
-    {
-        // Arrange.
-        var expectedStatusCode = System.Net.HttpStatusCode.OK;
-        var stopwatch = Stopwatch.StartNew();
+            // Assert.
+            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result as BadRequestObjectResult);
+            object? responseContent = badRequestResult.Value as object;
 
-        var expectedContent = new AuthenticateResponse()
+
+            Assert.Equivalent(expectedContent, responseContent);
+
+        }
+
+        [Fact, TestPriority(3)]
+        public void WhenCallingAuthenticate_ThenReturnsBadRequest()
         {
-            Name = "Test User",
-            Username = "testuser"
-        };
+            // Arrange.
+            object? expectedContent = new { message = "Username or password is incorrect" };
 
-        var content = new AuthenticateRequest()
+            var content = new AuthenticateRequest()
+            {
+                Username = "testures",
+                Password = "testures123"
+            };
+
+            // Act.
+            var result = _usersController.Authenticate(content);
+
+            // Assert.
+            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result as BadRequestObjectResult);
+            object? responseContent = badRequestResult.Value as object;
+
+            Assert.Equivalent(expectedContent, responseContent);
+
+        }
+
+        [Fact, TestPriority(4)]
+        public void WhenCallingAuthenticate_ThenReturnsOK()
         {
-            Username = "testuser",
-            Password = "testuser123"
-        };
+            // Arrange.
+            var content = new AuthenticateRequest()
+            {
+                Username = "testUser",
+                Password = "testUser123"
+            };
 
-        // Act.
-        var response = await _httpClient.PostAsync("/Users/authenticate", TestHelper.GetJsonStringContent(content));
+            // Act.
+            var result = _usersController.Authenticate(content);
 
-        // Assert.
-        var responseStream = await response.Content.ReadAsStreamAsync();
-        var responseContent = await JsonSerializer.DeserializeAsync<AuthenticateResponse>(responseStream, _jsonSerializerOptions);
+            // Assert.
+            var okResult = Assert.IsType<OkObjectResult>(result as OkObjectResult);
+            var response = okResult.Value as AuthenticateResponse;
 
-        TestHelper.AssertCommonResponseParts(stopwatch, response, expectedStatusCode);
+            Assert.Equal("Test User", response.Name);
+            Assert.Equal("testUser", response.Username);
+            Assert.False(string.IsNullOrEmpty(response.Token));
 
-        Assert.Equal(expectedContent.Name, responseContent.Name);
-        Assert.Equal(expectedContent.Username, responseContent.Username);
+        }
 
-        _userToken = responseContent.Token;
-    }
-
-    [Fact, TestPriority(5)]
-    public async Task WhenCallingGetAll_ThenReturnsOK()
-    {
-        // Arrange.
-        var expectedStatusCode = System.Net.HttpStatusCode.OK;
-        var stopwatch = Stopwatch.StartNew();
-
-        // Act.
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _userToken);
-        var response = await _httpClient.GetAsync("/Users");
-
-        // Assert.
-        TestHelper.AssertCommonResponseParts(stopwatch, response, expectedStatusCode);
-    }
-
-    [Fact, TestPriority(6)]
-    public async Task WhenCallingGetAll_ThenReturnsUnauthorized()
-    {
-        // Arrange.
-        var expectedStatusCode = System.Net.HttpStatusCode.Unauthorized;
-        var expectedContent = new { message = "Unauthorized" };
-        var stopwatch = Stopwatch.StartNew();
-
-        // Act.
-        var response = await _httpClient.GetAsync("/Users");
-
-        // Assert.
-        await TestHelper.AssertResponseWithContentAsync(stopwatch, response, expectedStatusCode, expectedContent);
-    }
-
-    [Fact, TestPriority(7)]
-    public async Task WhenCallingGetById_ThenReturnsUnauthorized()
-    {
-        // Arrange.
-        var expectedStatusCode = System.Net.HttpStatusCode.Unauthorized;
-        var expectedContent = new { message = "Unauthorized" };
-        var stopwatch = Stopwatch.StartNew();
-
-        // Act.
-        var response = await _httpClient.GetAsync($"/Users/{_userId}");
-
-        // Assert.
-        await TestHelper.AssertResponseWithContentAsync(stopwatch, response, expectedStatusCode, expectedContent);
-    }
-
-    [Fact, TestPriority(8)]
-    public async Task WhenCallingGetById_ThenReturnsOK()
-    {
-        // Arrange.
-        var expectedStatusCode = System.Net.HttpStatusCode.OK;
-        var stopwatch = Stopwatch.StartNew();
-
-        var expectedContent = new User()
+        [Fact, TestPriority(5)]
+        public void WhenCallingGetAll_ThenReturnsOK()
         {
-            Name = "Test User",
-            Username = "testuser"
-        };
+            // Arrange.
 
-        // Act.
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _userToken);
-        var response = await _httpClient.GetAsync($"/Users/{_userId}");
+            // Act.
+            var result = _usersController.GetAll();
 
-        // Assert.
-        var responseStream = await response.Content.ReadAsStreamAsync();
-        var responseContent = await JsonSerializer.DeserializeAsync<User>(responseStream, _jsonSerializerOptions);
+            // Assert.
+            var okResult = Assert.IsType<OkObjectResult>(result as OkObjectResult);
 
-        TestHelper.AssertCommonResponseParts(stopwatch, response, expectedStatusCode);
+            var users = okResult.Value as List<User>;
 
-        Assert.Equal(expectedContent.Name, responseContent.Name);
-        Assert.Equal(expectedContent.Username, responseContent.Username);
+            Assert.Equal(2, users.Count);
 
-    }
+        }
 
-    [Fact, TestPriority(9)]
-    public async Task WhenCallingGetById_ThenReturnsNotFound()
-    {
-        // Arrange.
-        var expectedStatusCode = System.Net.HttpStatusCode.NotFound;
-        var expectedContent = new { message = "User not found" };
-        var stopwatch = Stopwatch.StartNew();
-
-        // Act.
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _userToken);
-        var response = await _httpClient.GetAsync($"/Users/0");
-
-        // Assert.
-        await TestHelper.AssertResponseWithContentAsync(stopwatch, response, expectedStatusCode, expectedContent);
-    }
-
-    [Fact, TestPriority(10)]
-    public async Task WhenCallingUpdate_ThenReturnsUnauthorized()
-    {
-        // Arrange.
-        var expectedStatusCode = System.Net.HttpStatusCode.Unauthorized;
-        var expectedContent = new { message = "Unauthorized" };
-        var stopwatch = Stopwatch.StartNew();
-
-        var content = new UpdateRequest()
+        [Fact, TestPriority(6)]
+        public void WhenCallingGetById_ThenReturnsOK()
         {
-            Name = "Test User Updated",
-            Username = "testuser",
-            Password = "testuser123"
-        };
+            // Arrange.
+            var expectedContent = new User()
+            {
+                Name = "Test User",
+                Username = "testUser"
+            };
 
-        // Act.
-        var response = await _httpClient.PutAsync($"/Users/{_userId}", TestHelper.GetJsonStringContent(content));
+            // Act.
+            var result = _usersController.GetById(1);
 
-        // Assert.
-        await TestHelper.AssertResponseWithContentAsync(stopwatch, response, expectedStatusCode, expectedContent);
-    }
+            // Assert.
+            var okResult = Assert.IsType<OkObjectResult>(result as OkObjectResult);
+            var response = okResult.Value as User;
 
-    [Fact, TestPriority(11)]
-    public async Task WhenCallingUpdate_ThenReturnsNotFound()
-    {
-        // Arrange.
-        var expectedStatusCode = System.Net.HttpStatusCode.NotFound;
-        var expectedContent = new { message = "User not found" };
-        var stopwatch = Stopwatch.StartNew();
+            Assert.Equal(expectedContent.Name, response.Name);
+            Assert.Equal(expectedContent.Username, response.Username);
+        }
 
-        var content = new UpdateRequest()
+        [Fact, TestPriority(7)]
+        public void WhenCallingGetById_ThenReturnsNotFound()
         {
-            Name = "Test User Updated",
-            Username = "testuser",
-            Password = "testuser123"
-        };
+            // Arrange.
+            object? expectedContent = new { message = "User not found" };
 
-        // Act.
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _userToken);
-        var response = await _httpClient.PutAsync($"/Users/0", TestHelper.GetJsonStringContent(content));
+            // Act.
+            var result = _usersController.GetById(0);
 
-        // Assert.
-        await TestHelper.AssertResponseWithContentAsync(stopwatch, response, expectedStatusCode, expectedContent);
-    }
+            // Assert.
+            var notFoundResult = Assert.IsType<NotFoundObjectResult>(result as NotFoundObjectResult);
+            object? responseContent = notFoundResult.Value as object;
 
-    [Fact, TestPriority(12)]
-    public async Task WhenCallingUpdate_ThenReturnsOk()
-    {
-        // Arrange.
-        var expectedStatusCode = System.Net.HttpStatusCode.OK;
-        var expectedContent = new { message = "User updated successfully" };
-        var stopwatch = Stopwatch.StartNew();
+            Assert.Equivalent(expectedContent, responseContent);
+        }
 
-        var content = new UpdateRequest()
+        [Fact, TestPriority(8)]
+        public void WhenCallingUpdate_ThenReturnsNotFound()
         {
-            Name = "Test User Updated",
-            Username = "testuser",
-            Password = "testuser123"
-        };
+            // Arrange.
+            object? expectedContent = new { message = "User not found" };
 
-        // Act.
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _userToken);
-        var response = await _httpClient.PutAsync($"/Users/{_userId}", TestHelper.GetJsonStringContent(content));
+            var content = new UpdateRequest()
+            {
+                Name = "Test User Updated",
+                Username = "testUser",
+                Password = "testUser123"
+            };
 
-        // Assert.
-        await TestHelper.AssertResponseWithContentAsync(stopwatch, response, expectedStatusCode, expectedContent);
+            // Act.
+            var result = _usersController.Update(0, content);
 
+            // Assert.
+            var notFoundResult = Assert.IsType<NotFoundObjectResult>(result as NotFoundObjectResult);
+            object? responseContent = notFoundResult.Value as object;
 
-        response = await _httpClient.GetAsync($"/Users/{_userId}");
+            Assert.Equivalent(expectedContent, responseContent);
+        }
 
-        var responseStream = await response.Content.ReadAsStreamAsync();
-        var responseContent = await JsonSerializer.DeserializeAsync<User>(responseStream, _jsonSerializerOptions);
+        [Fact, TestPriority(9)]
+        public void WhenCallingUpdate_ThenReturnsOk()
+        {
+            // Arrange.
+            object? expectedContent = new { message = "User updated successfully" };
 
-        TestHelper.AssertCommonResponseParts(stopwatch, response, expectedStatusCode);
+            var content = new UpdateRequest()
+            {
+                Name = "Test User Updated",
+                Username = "testUser",
+                Password = "testUser123"
+            };
 
-        Assert.Equal("Test User Updated", responseContent.Name);
-        Assert.Equal("testuser", responseContent.Username);
-    }
+            // Act.
+            var result = _usersController.Update(1, content);
 
-    [Fact, TestPriority(13)]
-    public async Task WhenCallingDelete_ThenReturnsUnauthorized()
-    {
-        // Arrange.
-        var expectedStatusCode = System.Net.HttpStatusCode.Unauthorized;
-        var expectedContent = new { message = "Unauthorized" };
-        var stopwatch = Stopwatch.StartNew();
+            // Assert.
+            var okResult = Assert.IsType<OkObjectResult>(result as OkObjectResult);
+            object? responseContent = okResult.Value as object;
 
-        // Act.
-        var response = await _httpClient.DeleteAsync($"/Users/{_userId}");
+            Assert.Equivalent(expectedContent, responseContent);
+        }
 
-        // Assert.
-        await TestHelper.AssertResponseWithContentAsync(stopwatch, response, expectedStatusCode, expectedContent);
-    }
+        [Fact, TestPriority(10)]
+        public void WhenCallingDelete_ThenReturnsNotFound()
+        {
+            // Arrange.
+            object? expectedContent = new { message = "User not found" };
 
-    [Fact, TestPriority(14)]
-    public async Task WhenCallingDelete_ThenReturnsNotFound()
-    {
-        // Arrange.
-        var expectedStatusCode = System.Net.HttpStatusCode.NotFound;
-        var expectedContent = new { message = "User not found" };
-        var stopwatch = Stopwatch.StartNew();
+            // Act.
+            var result = _usersController.Delete(0);
 
-        // Act.
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _userToken);
+            // Assert.
+            var notFoundResult = Assert.IsType<NotFoundObjectResult>(result as NotFoundObjectResult);
+            object? responseContent = notFoundResult.Value as object;
 
-        var response = await _httpClient.DeleteAsync($"/Users/0");
+            Assert.Equivalent(expectedContent, responseContent);
+        }
 
-        // Assert.
-        await TestHelper.AssertResponseWithContentAsync(stopwatch, response, expectedStatusCode, expectedContent);
-    }
+        [Fact, TestPriority(11)]
+        public void WhenCallingDelete_ThenReturnsOK()
+        {
+            // Arrange.
+            object? expectedContent = new { message = "User deleted successfully" };
 
-    [Fact, TestPriority(15)]
-    public async Task WhenCallingDelete_ThenReturnsOK()
-    {
-        // Arrange.
-        var expectedStatusCode = System.Net.HttpStatusCode.OK;
-        var expectedContent = new { message = "User deleted successfully" };
-        var stopwatch = Stopwatch.StartNew();
+            // Act.
+            var result = _usersController.Delete(1);
 
-        // Act.
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _userToken);
+            // Assert.
+            var okResult = Assert.IsType<OkObjectResult>(result as OkObjectResult);
+            object? responseContent = okResult.Value as object;
 
-        var response = await _httpClient.DeleteAsync($"/Users/{_userId}");
+            Assert.Equivalent(expectedContent, responseContent);
+        }
 
-        // Assert.
-        await TestHelper.AssertResponseWithContentAsync(stopwatch, response, expectedStatusCode, expectedContent);
-    }
-    
-
-    public void Dispose()
-    {
-        //_httpClient.DeleteAsync("/state").GetAwaiter().GetResult();
-        _httpClient.CancelPendingRequests();
-        _httpClient.Dispose();
     }
 
 }
