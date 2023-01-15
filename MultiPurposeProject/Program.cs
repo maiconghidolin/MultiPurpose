@@ -5,6 +5,8 @@ using MongoDB.Driver;
 using MultiPurposeProject.Authorization;
 using MultiPurposeProject.Helpers;
 using MultiPurposeProject.Services;
+using System;
+using System.Data.Common;
 using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -14,10 +16,14 @@ var builder = WebApplication.CreateBuilder(args);
     var services = builder.Services;
     var env = builder.Environment;
 
-    // use sql server db in production and sqlite db in development
-   
-    services.AddDbContext<DataContext>();
-   
+    
+    services.AddDbContext<DataContext>((container, options) =>
+    {
+        var connectionString = Environment.GetEnvironmentVariable("DB_CONNECTION_STRING");
+
+        options.UseNpgsql(connectionString);
+    });
+
     services.AddCors();
 
     services.AddControllers();
@@ -64,8 +70,21 @@ var app = builder.Build();
 // migrate any database changes on startup (includes initial db creation)
 using (var scope = app.Services.CreateScope())
 {
-    var dataContext = scope.ServiceProvider.GetRequiredService<DataContext>();
-    dataContext.Database.Migrate();
+    using (var dataContext = scope.ServiceProvider.GetRequiredService<DataContext>())
+    {
+
+        try
+        {
+            if (dataContext.Database.ProviderName != "Microsoft.EntityFrameworkCore.InMemory")
+                dataContext.Database.Migrate();
+
+        }
+        catch (Exception ex)
+        {
+            //Log errors or do anything you think it's needed
+            throw;
+        }
+    }
 }
 
 // Configure the HTTP request pipeline.
@@ -93,3 +112,5 @@ if (app.Environment.IsDevelopment())
 }
 
 app.Run();
+
+public partial class Program { }
