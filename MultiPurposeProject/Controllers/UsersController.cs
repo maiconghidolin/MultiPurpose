@@ -5,6 +5,7 @@ using MultiPurposeProject.Authorization;
 using MultiPurposeProject.Entities;
 using MultiPurposeProject.Models.Users;
 using MultiPurposeProject.Services;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 [Authorize]
 [ApiController]
@@ -36,46 +37,93 @@ public class UsersController : ControllerBase
     /// </remarks>
     [AllowAnonymous]
     [HttpPost("authenticate")]
-    public IActionResult Authenticate(AuthenticateRequest model)
+    public ActionResult Authenticate(AuthenticateRequest model)
     {
-        AuthenticateResponse response = _userService.Authenticate(model);
-        return Ok(response);
+        try
+        {
+            AuthenticateResponse response = _userService.Authenticate(model);
+            return Ok(response);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 
     [AllowAnonymous]
     [HttpPost("register")]
-    public IActionResult Register(RegisterRequest model)
+    public ActionResult Register(RegisterRequest model)
     {
-        User user = _userService.Register(model);
-        return Ok(user);
+        try
+        {
+            User user = _userService.Register(model);
+            return Ok(user);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 
     [HttpGet]
-    public IActionResult GetAll()
+    public ActionResult GetAll()
     {
         var users = _userService.GetAll();
         return Ok(users);
     }
 
     [HttpGet("{id}")]
-    public IActionResult GetById(int id)
+    public ActionResult GetById(int id)
     {
-        var user = _userService.GetById(id);
-        return Ok(user);
+        try
+        {
+            var user = _userService.GetById(id);
+            return Ok(user);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 
     [HttpPut("{id}")]
-    public IActionResult Update(int id, UpdateRequest model)
+    public ActionResult Update(int id, UpdateRequest model)
     {
-        _userService.Update(id, model);
-        return Ok(new { message = "User updated successfully" });
+        try
+        {
+            _userService.Update(id, model);
+            return Ok(new { message = "User updated successfully" });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 
     [HttpDelete("{id}")]
-    public IActionResult Delete(int id)
+    public ActionResult Delete(int id)
     {
-        _userService.Delete(id);
-        return Ok(new { message = "User deleted successfully" });
+        try
+        {
+            _userService.Delete(id);
+            return Ok(new { message = "User deleted successfully" });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 }
 
