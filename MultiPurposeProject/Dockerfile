@@ -7,10 +7,12 @@ EXPOSE 443
 
 FROM mcr.microsoft.com/dotnet/sdk:7.0 AS build
 WORKDIR /src
-COPY ["MultiPurposeProject/MultiPurposeProject.csproj", "MultiPurposeProject/"]
+COPY ["MultiPurposeProject.csproj", "MultiPurposeProject/"]
 RUN dotnet restore "MultiPurposeProject/MultiPurposeProject.csproj"
-COPY . .
+
 WORKDIR "/src/MultiPurposeProject"
+COPY . .
+
 RUN dotnet build "MultiPurposeProject.csproj" -c Release -o /app/build
 
 FROM build AS publish
