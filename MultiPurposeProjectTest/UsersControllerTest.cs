@@ -40,7 +40,7 @@ namespace MultiPurposeProjectUnitTest
             var okResult = Assert.IsType<OkObjectResult>(result as OkObjectResult);
             var user = okResult.Value as User;
 
-            Assert.Equal("Other User", user.Name);
+            Assert.Equal("asdfg", user.Name);
             Assert.Equal("otherUser", user.Username);
         }
 
